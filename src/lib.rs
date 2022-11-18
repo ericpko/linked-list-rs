@@ -39,10 +39,13 @@ mod test {
 
     #[test]
     fn create_list() {
-        let list = vec![1, 2, 3, 4, 5];
-        let mut list = LinkedList::new(Some(list));
+        let arr = vec![1, 2, 3, 4, 5];
+        let mut list = LinkedList::new(Some(arr.clone()));
+        let mut i = 0;
         while let Some(curr) = list.head {
             println!("{}", curr.item);
+            assert_eq!(arr[i], curr.item);
+            i += 1;
             list.head = curr.next.clone();
         }
     }
