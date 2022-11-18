@@ -15,21 +15,21 @@ impl<T> Node<T> {
 
 pub struct LinkedList<T> {
     pub head: Link<T>,
-    pub size: u32,
+    pub len: u32,
 }
 
 impl<T> LinkedList<T> {
     pub fn new(list: Option<Vec<T>>) -> Self {
         let mut head: Link<T> = None;
-        let mut size: u32 = 0;
+        let mut len: u32 = 0;
         if let Some(items) = list {
-            size = items.len() as u32;
+            len = items.len() as u32;
             for item in items.into_iter().rev() {
                 head = Some(Rc::new(Node::new(item, head.clone())));
             }
         }
 
-        Self { head, size }
+        Self { head, len }
     }
 }
 
