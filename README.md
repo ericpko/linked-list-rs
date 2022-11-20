@@ -1,1 +1,1 @@
-# Just a linked list written in Rust.
+# Simple linked list in Rust
