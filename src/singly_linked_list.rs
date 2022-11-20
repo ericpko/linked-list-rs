@@ -38,7 +38,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn create_list() {
+    fn test_create_list() {
         let arr = vec![1, 2, 3, 4, 5];
         let mut list = SinglyLinkedList::new(Some(arr.clone()));
         let mut i = 0;
