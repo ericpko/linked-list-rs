@@ -89,6 +89,55 @@ impl<T> LinkedList<T> {
         self.len -= 1;
         val
     }
+
+    pub fn pop_back2(&mut self) -> Option<Node<T>> {
+        let mut val = None;
+
+        // case 1: empty list
+        if self.len == 0 {
+            return val;
+
+        // case 2: one item in list
+        } else if self.len == 1 {
+            if let Some(tail) = self.tail.take() {
+                self.head = None;
+                self.tail = None;
+                val = Some(Rc::try_unwrap(tail).ok().unwrap().into_inner());
+            }
+
+        // case 3: at least two items in list
+        } else {
+            if let Some(old_tail) = self.tail.take() {
+                if let Some(new_tail) = old_tail.borrow_mut().prev.take() {
+                    new_tail.borrow_mut().next.take();
+                    self.tail = Some(new_tail);
+                }
+                val = Some(Rc::try_unwrap(old_tail).ok().unwrap().into_inner());
+            }
+        }
+
+        self.len -= 1;
+        val
+    }
+
+    pub fn pop_back(&mut self) -> Option<T> {
+        if self.len > 0 {
+            self.len -= 1;
+        }
+
+        self.tail.take().map(|old_tail| {
+            match old_tail.borrow_mut().prev.take() {
+                Some(new_tail) => {
+                    new_tail.borrow_mut().next.take();
+                    self.tail = Some(new_tail);
+                }
+                None => {
+                    self.head.take();
+                }
+            }
+            Rc::try_unwrap(old_tail).ok().unwrap().into_inner().item
+        })
+    }
 }
 
 impl<T> fmt::Display for LinkedList<T>
