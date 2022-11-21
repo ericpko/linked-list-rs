@@ -1,4 +1,8 @@
-use std::{cell::RefCell, fmt, rc::Rc};
+use std::{
+    cell::{Ref, RefCell, RefMut},
+    fmt,
+    rc::Rc,
+};
 
 type Link<T> = Option<Rc<RefCell<Node<T>>>>;
 
@@ -33,6 +37,39 @@ impl<T> LinkedList<T> {
         self.len
     }
 
+    pub fn push_front(&mut self, item: T) {
+        let new_head = Rc::new(RefCell::new(Node::new(item, None, None)));
+        match self.head.take() {
+            Some(old_head) => {
+                old_head.borrow_mut().prev = Some(Rc::clone(&new_head));
+                new_head.borrow_mut().next = Some(old_head);
+                self.head = Some(new_head);
+            }
+            None => {
+                self.head = Some(Rc::clone(&new_head));
+                self.tail = Some(new_head);
+            }
+        }
+        self.len += 1;
+    }
+
+    pub fn push_back(&mut self, item: T) {
+        let new_tail = Rc::new(RefCell::new(Node::new(item, None, None)));
+
+        match self.tail.take() {
+            Some(old_tail) => {
+                old_tail.borrow_mut().next = Some(Rc::clone(&new_tail));
+                new_tail.borrow_mut().prev = Some(old_tail);
+            }
+            None => {
+                self.head = Some(new_tail.clone());
+                self.tail = Some(new_tail);
+            }
+        }
+
+        self.len += 1;
+    }
+
     pub fn append(&mut self, item: T) {
         let node = Rc::new(RefCell::new(Node::new(item, None, None)));
 
@@ -53,11 +90,23 @@ impl<T> LinkedList<T> {
         self.len += 1;
     }
 
-    pub fn prepend(&mut self, _item: T) {
-        todo!()
+    pub fn prepend(&mut self, item: T) {
+        let new_head = Rc::new(RefCell::new(Node::new(item, None, None)));
+        match self.head.take() {
+            Some(old_head) => {
+                old_head.borrow_mut().prev = Some(Rc::clone(&new_head));
+                new_head.borrow_mut().next = Some(old_head);
+                self.head = Some(new_head);
+            }
+            None => {
+                self.head = Some(Rc::clone(&new_head));
+                self.tail = Some(new_head);
+            }
+        }
+        self.len += 1;
     }
 
-    pub fn pop(&mut self) -> Option<T>
+    pub fn _pop(&mut self) -> Option<T>
     where
         T: Copy,
     {
@@ -90,7 +139,7 @@ impl<T> LinkedList<T> {
         val
     }
 
-    pub fn pop_back2(&mut self) -> Option<Node<T>> {
+    pub fn pop(&mut self) -> Option<T> {
         let mut val = None;
 
         // case 1: empty list
@@ -102,7 +151,7 @@ impl<T> LinkedList<T> {
             if let Some(tail) = self.tail.take() {
                 self.head = None;
                 self.tail = None;
-                val = Some(Rc::try_unwrap(tail).ok().unwrap().into_inner());
+                val = Some(Rc::try_unwrap(tail).ok().unwrap().into_inner().item);
             }
 
         // case 3: at least two items in list
@@ -112,7 +161,7 @@ impl<T> LinkedList<T> {
                     new_tail.borrow_mut().next.take();
                     self.tail = Some(new_tail);
                 }
-                val = Some(Rc::try_unwrap(old_tail).ok().unwrap().into_inner());
+                val = Some(Rc::try_unwrap(old_tail).ok().unwrap().into_inner().item);
             }
         }
 
@@ -137,6 +186,82 @@ impl<T> LinkedList<T> {
             }
             Rc::try_unwrap(old_tail).ok().unwrap().into_inner().item
         })
+    }
+
+    pub fn pop_front(&mut self) -> Option<T> {
+        if self.len > 0 {
+            self.len -= 1;
+        }
+
+        self.head.take().map(|old_head| {
+            match old_head.borrow_mut().next.take() {
+                Some(new_head) => {
+                    new_head.borrow_mut().prev.take();
+                    self.head = Some(new_head);
+                }
+                None => {
+                    self.tail.take();
+                }
+            }
+            Rc::try_unwrap(old_head).ok().unwrap().into_inner().item
+        })
+    }
+
+    pub fn peek_front(&self) -> Option<Ref<T>> {
+        // self.head
+        //     .as_ref()
+        //     .map(|node| Ref::map(node.borrow(), |node| &node.item))
+        if let Some(ref head) = self.head {
+            let ptr = Ref::map(head.borrow(), |node| &node.item);
+            return Some(ptr);
+        }
+        None
+    }
+
+    pub fn peek_back(&self) -> Option<Ref<T>> {
+        self.tail
+            .as_ref()
+            .map(|tail| Ref::map(tail.borrow(), |node| &node.item))
+    }
+
+    pub fn peek_front_mut(&mut self) -> Option<RefMut<T>> {
+        if let Some(ref head) = self.head {
+            let ref_mut = RefMut::map(head.borrow_mut(), |node| &mut node.item);
+            return Some(ref_mut);
+        }
+        None
+    }
+
+    pub fn peek_back_mut(&mut self) -> Option<RefMut<T>> {
+        self.tail
+            .as_ref()
+            .map(|tail| RefMut::map(tail.borrow_mut(), |node| &mut node.item))
+    }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+}
+
+pub struct IntoIter<T>(LinkedList<T>);
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop_front()
+    }
+}
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.pop_back()
+    }
+}
+
+impl<T> Drop for LinkedList<T> {
+    fn drop(&mut self) {
+        while self.pop_front().is_some() {}
     }
 }
 
