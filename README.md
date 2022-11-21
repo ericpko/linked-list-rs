@@ -1,4 +1,4 @@
-# Simple linked list in Rust
+# Simple doubly linked list in Rust
 
 Needed for a small separate project.
 
