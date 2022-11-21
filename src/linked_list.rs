@@ -60,6 +60,7 @@ impl<T> LinkedList<T> {
             Some(old_tail) => {
                 old_tail.borrow_mut().next = Some(Rc::clone(&new_tail));
                 new_tail.borrow_mut().prev = Some(old_tail);
+                self.tail = Some(new_tail);
             }
             None => {
                 self.head = Some(new_tail.clone());
@@ -104,6 +105,12 @@ impl<T> LinkedList<T> {
             }
         }
         self.len += 1;
+    }
+
+    pub fn extend(&mut self, items: Vec<T>) {
+        for item in items {
+            self.push_back(item);
+        }
     }
 
     pub fn _pop(&mut self) -> Option<T>
@@ -285,6 +292,19 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_push_back() {
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+        list.push_back(4);
+        list.push_back(5);
+        list.push_back(6);
+        assert_eq!(6, list.len());
+        println!("{}", list);
+    }
+
+    #[test]
     fn test_append() {
         let mut list = LinkedList::new();
         list.append(1);
@@ -293,32 +313,53 @@ mod test {
         list.append(4);
         list.append(5);
         println!("{}", list);
-        println!("{}", list);
     }
 
     #[test]
-    fn test_len() {
+    fn test_extend() {
+        let items = vec![10, 11, 12, 13, 14, 15, 16];
         let mut list = LinkedList::new();
-        list.append(1);
-        list.append(2);
-        list.append(3);
-        list.append(4);
-        list.append(5);
-        assert_eq!(5, list.len());
+        list.extend(items);
+        println!("{}", list);
+        assert_eq!(7, list.len());
     }
 
     #[test]
-    fn test_pop() {
+    fn test_pop_and_len() {
         let mut list = LinkedList::new();
-        list.append(1);
-        list.append(2);
-        list.append(3);
-        list.append(4);
-        list.append(5);
-        let five = list.pop().unwrap();
-        assert_eq!(5, five);
-        assert_eq!(4, list.pop().unwrap());
-        println!("{}", list);
-        assert_eq!(3, list.len());
+        assert_eq!(list.len(), 0);
+        assert_eq!(list.pop_back(), None);
+        assert_eq!(list.len(), 0);
+
+        list.push_back(1);
+        assert_eq!(list.len(), 1);
+        assert_eq!(list.pop_back(), Some(1));
+        assert_eq!(list.len(), 0);
+
+        list.push_front(2);
+        assert_eq!(list.len(), 1);
+        assert_eq!(list.pop_back(), Some(2));
+        assert_eq!(list.len(), 0);
+
+        list.push_front(3);
+        assert_eq!(list.len(), 1);
+        assert_eq!(list.pop_front(), Some(3));
+        assert_eq!(list.len(), 0);
+
+        let items = vec![10, 11, 12, 13, 14, 15, 16];
+        list.extend(items);
+        println!("Initial: {}", list);
+        assert_eq!(list.len(), 7);
+        assert_eq!(list.pop_front(), Some(10));
+        assert_eq!(list.len(), 6);
+        println!("After pop_front: {}", list);
+
+        assert_eq!(list.pop_front(), Some(11));
+        assert_eq!(list.len(), 5);
+        println!("After pop_front: {}", list);
+
+        assert_eq!(list.pop_back(), Some(16));
+        assert_eq!(list.len(), 4);
+        println!("After pop_back: {}", list);
     }
 }
